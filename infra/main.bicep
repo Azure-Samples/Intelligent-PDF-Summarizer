@@ -7,7 +7,7 @@ param environmentName string
 
 @minLength(1)
 @description('Primary location for all resources')
-@allowed(['australiaeast', 'eastasia', 'eastus', 'eastus2', 'northeurope', 'southcentralus', 'southeastasia', 'swedencentral', 'uksouth', 'westus2', 'eastus2euap'])
+@allowed(['australiaeast', 'eastasia', 'eastus', 'eastus2', 'northcentralus', 'northeurope', 'southcentralus', 'southeastasia', 'swedencentral', 'uksouth', 'westus2', 'eastus2euap'])
 @metadata({
   azd: {
     type: 'location'
@@ -182,17 +182,17 @@ module storage './core/storage/storage-account.bicep' = {
     tags: tags
     containers: [{
       name: deploymentStorageContainerName
-      publicAccess: 'Blob'
+      publicAccess: 'None'
     },{
       name: 'input'
-      publicAccess: 'Blob'
+      publicAccess: 'None'
 
     },{
       name: 'output'
-      publicAccess: 'Blob'
+      publicAccess: 'None'
     }]
     publicNetworkAccess: 'Enabled' // revisit for wave 3
-    allowBlobPublicAccess: true
+    allowBlobPublicAccess: false
   }
 }
 

@@ -3,7 +3,7 @@ param roleDefinitionID string
 param dtsName string
 param principalType string
 
-resource dts 'Microsoft.DurableTask/schedulers@2025-04-01-preview' existing = {
+resource dts 'Microsoft.DurableTask/schedulers@2026-02-01' existing = {
   name: dtsName
 }
 
