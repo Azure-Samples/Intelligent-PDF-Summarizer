@@ -82,7 +82,6 @@ param taskHubName string = 'default'
 ])
 param dtsLocation string = 'northcentralus'
 param dtsSkuName string = 'Dedicated'
-param dtsCapacity int = 1
  
 param openAiSkuName string
 @allowed([ 'azure', 'openai', 'azure_custom' ])
@@ -98,9 +97,9 @@ param chatGptDeploymentVersion string = ''
 param chatGptDeploymentCapacity int = 0
 
 var chatGpt = {
-  modelName: !empty(chatGptModelName) ? chatGptModelName : startsWith(openAiHost, 'azure') ? 'gpt-35-turbo' : 'gpt-3.5-turbo'
+  modelName: !empty(chatGptModelName) ? chatGptModelName : startsWith(openAiHost, 'azure') ? 'gpt-4o-mini' : 'gpt-3.5-turbo'
   deploymentName: !empty(chatGptDeploymentName) ? chatGptDeploymentName : 'chat'
-  deploymentVersion: !empty(chatGptDeploymentVersion) ? chatGptDeploymentVersion : '0613'
+  deploymentVersion: !empty(chatGptDeploymentVersion) ? chatGptDeploymentVersion : '2024-07-18'
   deploymentCapacity: chatGptDeploymentCapacity != 0 ? chatGptDeploymentCapacity : 40
 }
 
@@ -357,7 +356,6 @@ module dts './app/dts.bicep' = {
       '0.0.0.0/0'
     ]
     skuName: dtsSkuName
-    skuCapacity: dtsCapacity
   }
 }
 
