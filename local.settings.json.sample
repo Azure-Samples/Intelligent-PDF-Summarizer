@@ -4,7 +4,7 @@
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
     "FUNCTIONS_WORKER_RUNTIME": "python",
-    "DURABLE_TASK_SCHEDULER_CONNECTION_STRING": "Endpoint=http://localhost:8080;Authentication=None",
+    "DURABLE_TASK_SCHEDULER_CONNECTION_STRING": "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None",
     "TASKHUB_NAME": "default",
     "BLOB_STORAGE_ENDPOINT": "<BLOB-STORAGE-ENDPOINT>",
     "COGNITIVE_SERVICES_ENDPOINT": "<COGNITIVE-SERVICE-ENDPOINT>",
