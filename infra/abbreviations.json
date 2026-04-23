@@ -38,6 +38,8 @@
     "devicesProvisioningServices": "provs-",
     "devicesProvisioningServicesCertificates": "pcert-",
     "documentDBDatabaseAccounts": "cosmos-",
+  "durableTaskSchedulers": "dts-",
+  "durableTaskHubs": "th-",
     "eventGridDomains": "evgd-",
     "eventGridDomainsTopics": "evgt-",
     "eventGridEventSubscriptions": "evgs-",

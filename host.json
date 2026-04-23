@@ -5,12 +5,22 @@
     "logLevel": {
       "default": "Warning",
       "Host": "Information",
-      "Function": "Information"
+      "Function": "Information",
+      "DurableTask.AzureManagedBackend": "Information"
+    }
+  },
+  "extensions": {
+    "durableTask": {
+      "hubName": "%TASKHUB_NAME%",
+      "storageProvider": {
+        "type": "azureManaged",
+        "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING"
+      }
     }
   },
   "extensionBundle": {
-      "id": "Microsoft.Azure.Functions.ExtensionBundle.Preview",
-      "version": "[4.*, 5.0.0)"
+    "id": "Microsoft.Azure.Functions.ExtensionBundle.Preview",
+    "version": "[4.*, 5.0.0)"
   }
 }
 
