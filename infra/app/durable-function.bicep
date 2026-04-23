@@ -11,7 +11,7 @@ param storageAccountName string
 param virtualNetworkSubnetId string = ''
 param identityId string = ''
 param identityClientId string = ''
-param dtmbURL string = ''
+param dtsURL string = ''
 param taskHubName string = ''
 param azureOpenaiService string
 param azureOpenaiChatgptDeployment string
@@ -34,6 +34,8 @@ module durableFunction '../core/host/functions.bicep' = {
         AzureWebJobsStorage__credential : 'managedidentity'
         APPLICATIONINSIGHTS_AUTHENTICATION_STRING: applicationInsightsIdentity
         AZURE_CLIENT_ID: identityClientId
+        DURABLE_TASK_SCHEDULER_CONNECTION_STRING: 'Endpoint=${dtsURL};Authentication=ManagedIdentity;ClientID=${identityClientId}'
+        TASKHUB_NAME: taskHubName
       })
     documentIntelligenceEndpoint: documentIntelligenceEndpoint
     azureOpenaiService: azureOpenaiService

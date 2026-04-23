@@ -7,7 +7,7 @@ param environmentName string
 
 @minLength(1)
 @description('Primary location for all resources')
-@allowed(['australiaeast', 'eastasia', 'eastus', 'eastus2', 'northeurope', 'southcentralus', 'southeastasia', 'swedencentral', 'uksouth', 'westus2', 'eastus2euap'])
+@allowed(['australiaeast', 'eastasia', 'eastus', 'eastus2', 'northcentralus', 'northeurope', 'southcentralus', 'southeastasia', 'swedencentral', 'uksouth', 'westus2', 'eastus2euap'])
 @metadata({
   azd: {
     type: 'location'
@@ -64,6 +64,24 @@ param vNetName string = ''
 param disableLocalAuth bool = true
 
 param openAiServiceName string = ''
+
+param durableTaskSchedulerName string = ''
+param taskHubName string = 'default'
+
+@allowed([
+  'northcentralus'
+  'australiaeast'
+  'centralus'
+  'eastasia'
+  'eastus2'
+  'northeurope'
+  'southeastasia'
+  'swedencentral'
+  'uksouth'
+  'westus2'
+])
+param dtsLocation string = 'northcentralus'
+param dtsSkuName string = 'Dedicated'
  
 param openAiSkuName string
 @allowed([ 'azure', 'openai', 'azure_custom' ])
@@ -79,9 +97,9 @@ param chatGptDeploymentVersion string = ''
 param chatGptDeploymentCapacity int = 0
 
 var chatGpt = {
-  modelName: !empty(chatGptModelName) ? chatGptModelName : startsWith(openAiHost, 'azure') ? 'gpt-35-turbo' : 'gpt-3.5-turbo'
+  modelName: !empty(chatGptModelName) ? chatGptModelName : startsWith(openAiHost, 'azure') ? 'gpt-4o-mini' : 'gpt-3.5-turbo'
   deploymentName: !empty(chatGptDeploymentName) ? chatGptDeploymentName : 'chat'
-  deploymentVersion: !empty(chatGptDeploymentVersion) ? chatGptDeploymentVersion : '0613'
+  deploymentVersion: !empty(chatGptDeploymentVersion) ? chatGptDeploymentVersion : '2024-07-18'
   deploymentCapacity: chatGptDeploymentCapacity != 0 ? chatGptDeploymentCapacity : 40
 }
 
@@ -90,6 +108,7 @@ var resourceToken = toLower(uniqueString(subscription().id, environmentName, loc
 var tags = { 'azd-env-name': environmentName }
 var functionAppName = !empty(durableFunctionServiceName) ? durableFunctionServiceName : '${abbrs.webSitesFunctions}${resourceToken}'
 var deploymentStorageContainerName = 'app-package-${take(functionAppName, 32)}-${take(toLower(uniqueString(functionAppName, resourceToken)), 7)}'
+var dtsResourceName = !empty(durableTaskSchedulerName) ? durableTaskSchedulerName : '${abbrs.durableTaskSchedulers}${resourceToken}'
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
@@ -144,6 +163,8 @@ module durableFunction './app/durable-function.bicep' = {
     azureOpenaiChatgptDeployment: chatGptDeploymentName
     azureOpenaiService: openAi.outputs.name
     documentIntelligenceEndpoint: documentIntelligence.outputs.endpoint
+    dtsURL: dts.outputs.dts_URL
+    taskHubName: dts.outputs.TASKHUB_NAME
     appSettings: {
     }
     virtualNetworkSubnetId: serviceVirtualNetwork.outputs.appSubnetID
@@ -160,17 +181,17 @@ module storage './core/storage/storage-account.bicep' = {
     tags: tags
     containers: [{
       name: deploymentStorageContainerName
-      publicAccess: 'Blob'
+      publicAccess: 'None'
     },{
       name: 'input'
-      publicAccess: 'Blob'
+      publicAccess: 'None'
 
     },{
       name: 'output'
-      publicAccess: 'Blob'
+      publicAccess: 'None'
     }]
     publicNetworkAccess: 'Enabled' // revisit for wave 3
-    allowBlobPublicAccess: true
+    allowBlobPublicAccess: false
   }
 }
 
@@ -322,6 +343,49 @@ module documentIntelligenceRoleBackend 'app/documentintelligence-Access.bicep' =
   }
 }
 
+// Durable Task Scheduler (state store for Durable Functions orchestrations)
+module dts './app/dts.bicep' = {
+  scope: rg
+  name: 'dtsResource'
+  params: {
+    name: dtsResourceName
+    taskhubname: taskHubName
+    location: dtsLocation
+    tags: tags
+    ipAllowlist: [
+      '0.0.0.0/0'
+    ]
+    skuName: dtsSkuName
+  }
+}
+
+// Durable Task Data Contributor role ID
+var dtsRoleDefinitionId = '0ad04412-c4d5-4796-b79c-f76d14c8d402'
+
+// Allow access from the function app to DTS using user assigned managed identity
+module dtsRoleAssignment 'app/dts-Access.bicep' = {
+  name: 'dtsRoleAssignment'
+  scope: rg
+  params: {
+    roleDefinitionID: dtsRoleDefinitionId
+    principalID: durableFunctionUserAssignedIdentity.outputs.identityPrincipalId
+    principalType: 'ServicePrincipal'
+    dtsName: dts.outputs.dts_NAME
+  }
+}
+
+// Allow the deployer identity to access the DTS dashboard
+module dtsDashboardRoleAssignment 'app/dts-Access.bicep' = if (!empty(principalId)) {
+  name: 'dtsDashboardRoleAssignment'
+  scope: rg
+  params: {
+    roleDefinitionID: dtsRoleDefinitionId
+    principalID: principalId
+    principalType: 'User'
+    dtsName: dts.outputs.dts_NAME
+  }
+}
+
 // App outputs
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString
 output AZURE_LOCATION string = location
@@ -331,3 +395,6 @@ output AZURE_FUNCTION_NAME string = durableFunction.outputs.SERVICE_DURABLE_FUNC
 output AZURE_RESOURCE_GROUP string = rg.name
 output AZURE_STORAGE_ACCOUNT_NAME string = storage.outputs.name
 output AZURE_STORAGE_CONTAINER_NAME string = deploymentStorageContainerName
+output DURABLE_TASK_SCHEDULER_NAME string = dts.outputs.dts_NAME
+output DURABLE_TASK_SCHEDULER_URL string = dts.outputs.dts_URL
+output TASKHUB_NAME string = dts.outputs.TASKHUB_NAME
